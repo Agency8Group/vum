@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메시지 전송</title>
+    <style>
+        /* ===== 필수 스타일 (절대 지우지 마세요!) ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1 style="text-align: center; color: #333; margin-bottom: 30px;">
+            💬 메시지 전송
+        </h1>
+        
+        <!-- ===== 폼 구조 (필드 추가/수정 시 여기서 변경) ===== -->
+        <form id="dataForm">
+            <div class="form-group">
+                <label for="message">메시지 *</label>
+                <textarea id="message" name="message" rows="6" placeholder="전송할 메시지를 입력하세요..." required></textarea>
+            </div>
+            
+            <!-- ===== 추가 필드 예시 (필요시 주석 해제) ===== -->
+            <!-- 
+            <div class="form-group">
+                <label for="name">이름</label>
+                <input type="text" id="name" name="name" placeholder="이름을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <input type="email" id="email" name="email" placeholder="이메일을 입력하세요">
+            </div>
+            -->
+            
+            <button type="submit" id="submitBtn">
+                📤 메시지 전송
+            </button>
+        </form>
+        
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        // ===== 필수 설정 (절대 지우지 마세요!) =====
+        // Google Apps Script URL - 배포 후 여기에 붙여넣기
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+        
+        // ===== 폼 제출 처리 (핵심 로직) =====
+        document.getElementById('dataForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const statusDiv = document.getElementById('status');
+            
+            // 버튼 비활성화 및 로딩 표시
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ 전송 중...';
+            showStatus('메시지를 전송하고 있습니다...', 'loading');
+            
+            try {
+                // ===== 데이터 수집 (필드 추가 시 여기서 수정) =====
+                const formData = new FormData(e.target);
+                const payload = {
+                    message: formData.get('message'),
+                    timestamp: new Date().toISOString()
+                };
+                
+                // ===== 추가 필드 수집 예시 (필요시 주석 해제) =====
+                // payload.name = formData.get('name');
+                // payload.email = formData.get('email');
+                
+                console.log('전송할 데이터:', payload);
+                
+                // ===== 핵심: Google Apps Script 호출 (절대 수정하지 마세요!) =====
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',  // ← 이게 핵심! CORS 오류 무시
+                    headers: {
+                        'Content-Type': 'text/plain',  // ← 이게 핵심! Google Apps Script가 받을 수 있는 형식
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                // ===== 성공 처리 (no-cors에서는 응답을 읽을 수 없으므로 바로 성공) =====
+                showStatus('✅ 메시지가 성공적으로 전송되었습니다!', 'success');
+                e.target.reset(); // 폼 초기화
+                
+            } catch (error) {
+                console.error('전송 오류:', error);
+                showStatus(`❌ 오류: ${error.message}`, 'error');
+            } finally {
+                // 버튼 상태 복구
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 메시지 전송';
+            }
+        });
+        
+        // ===== 상태 메시지 표시 함수 =====
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            // 5초 후 상태 메시지 숨기기
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // ===== 추가 기능 예시 (필요시 주석 해제) =====
+        /*
+        // 폼 유효성 검사 강화
+        function validateForm() {
+            const message = document.getElementById('message').value.trim();
+            if (message.length < 10) {
+                alert('메시지는 최소 10자 이상 입력해주세요.');
+                return false;
+            }
+            return true;
+        }
+        
+        // 자동 저장 기능
+        function autoSave() {
+            const message = document.getElementById('message').value;
+            localStorage.setItem('draft_message', message);
+        }
+        
+        // 자동 저장 복원
+        function restoreDraft() {
+            const saved = localStorage.getItem('draft_message');
+            if (saved) {
+                document.getElementById('message').value = saved;
+            }
+        }
+        */
+    </script>
+</body>
+</html> 
