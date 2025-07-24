@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets 연동 폼</title>
+    <title>간단한 메시지 전송</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -28,7 +28,7 @@
             font-weight: 600;
             color: #333;
         }
-        input, textarea {
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e1e5e9;
@@ -36,8 +36,9 @@
             font-size: 16px;
             transition: border-color 0.3s;
             box-sizing: border-box;
+            resize: vertical;
         }
-        input:focus, textarea:focus {
+        textarea:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -88,27 +89,17 @@
 <body>
     <div class="form-container">
         <h1 style="text-align: center; color: #333; margin-bottom: 30px;">
-            📝 데이터 수집 폼
+            💬 메시지 전송
         </h1>
         
         <form id="dataForm">
             <div class="form-group">
-                <label for="name">이름 *</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">이메일 *</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="message">메시지</label>
-                <textarea id="message" name="message" rows="4"></textarea>
+                <label for="message">메시지 *</label>
+                <textarea id="message" name="message" rows="6" placeholder="전송할 메시지를 입력하세요..." required></textarea>
             </div>
             
             <button type="submit" id="submitBtn">
-                📤 데이터 전송
+                📤 메시지 전송
             </button>
         </form>
         
@@ -117,7 +108,7 @@
 
     <script>
         // Google Apps Script URL (실제 배포 후 URL로 교체 필요)
-          const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1a3FxR22Ne0_tO-Cdbx8LL761Re_GE-IRbOAPpy1kW6eYfepCK7n_x08oA_OzjZ2ehA/exec';
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
         
         document.getElementById('dataForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -128,42 +119,31 @@
             // 버튼 비활성화 및 로딩 표시
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ 전송 중...';
-            showStatus('데이터를 전송하고 있습니다...', 'loading');
+            showStatus('메시지를 전송하고 있습니다...', 'loading');
             
             try {
                 // 폼 데이터 수집
                 const formData = new FormData(e.target);
                 const payload = {
-                    name: formData.get('name'),
-                    email: formData.get('email'),
                     message: formData.get('message'),
                     timestamp: new Date().toISOString()
                 };
                 
                 console.log('전송할 데이터:', payload);
                 
-                // Google Apps Script로 데이터 전송
+                // Google Apps Script로 데이터 전송 (기존 패턴 사용)
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain',
                     },
                     body: JSON.stringify(payload)
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                console.log('응답 결과:', result);
-                
-                if (result.success) {
-                    showStatus('✅ 데이터가 성공적으로 저장되었습니다!', 'success');
-                    e.target.reset(); // 폼 초기화
-                } else {
-                    throw new Error(result.message || '알 수 없는 오류가 발생했습니다.');
-                }
+                // no-cors 모드에서는 응답을 읽을 수 없으므로 바로 성공 처리
+                showStatus('✅ 메시지가 성공적으로 전송되었습니다!', 'success');
+                e.target.reset(); // 폼 초기화
                 
             } catch (error) {
                 console.error('전송 오류:', error);
@@ -171,7 +151,7 @@
             } finally {
                 // 버튼 상태 복구
                 submitBtn.disabled = false;
-                submitBtn.textContent = '📤 데이터 전송';
+                submitBtn.textContent = '📤 메시지 전송';
             }
         });
         
